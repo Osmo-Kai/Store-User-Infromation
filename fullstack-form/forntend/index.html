@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="container">
+    <h1>Contact Us</h1>
+    <form id="contactForm" class="card">
+      <label>
+        <span>Name</span>
+        <input type="text" id="name" required>
+      </label>
+      <label>
+        <span>Email</span>
+        <input type="email" id="email" required>
+      </label>
+      <label>
+        <span>Subject</span>
+        <input type="text" id="subject" required>
+      </label>
+      <label>
+        <span>Message</span>
+        <textarea id="message" rows="4" required></textarea>
+      </label>
+      <button type="submit">Send</button>
+      <p id="status" class="status"></p>
+    </form>
+
+    <section class="card">
+      <h2>Recent Messages</h2>
+      <ul id="messages"></ul>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = "http://localhost:5000";
+
+    async function fetchMessages() {
+      const res = await fetch(`${API_BASE}/api/messages`);
+      const data = await res.json();
+      const list = document.getElementById("messages");
+      list.innerHTML = "";
+      if (Array.isArray(data)) {
+        data.forEach(m => {
+          const li = document.createElement("li");
+          li.textContent = `${m.name} (${m.email}) — ${m.subject}: ${m.message}`;
+          list.appendChild(li);
+        });
+      }
+    }
+
+    document.getElementById("contactForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const status = document.getElementById("status");
+      status.textContent = "";
+
+      const payload = {
+        name: document.getElementById("name").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        subject: document.getElementById("subject").value.trim(),
+        message: document.getElementById("message").value.trim()
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/api/contact`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          status.textContent = "Message sent!";
+          status.className = "status success";
+          e.target.reset();
+          fetchMessages();
+        } else {
+          status.textContent = data.error || "Error sending message";
+          status.className = "status error";
+        }
+      } catch (err) {
+        status.textContent = err.message;
+        status.className = "status error";
+      }
+    });
+
+    fetchMessages();
+  </script>
+</body>
+</html>
